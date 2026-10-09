@@ -1,18 +1,21 @@
 // AegisGuard Content Script (Twitter/X & Instagram)
 (() => {
-    console.log('[AegisGuard] Sosyal Medya Manipülasyon Kalkanı Aktif!');
+    console.log('%c[AegisGuard] Sosyal Medya Manipülasyon Kalkanı Aktif!', 'background: #0284c7; color: #fff; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
 
-    const BACKEND_URL = 'http://localhost:8080/api/analyze';
     const PROCESSED_ATTR = 'data-aegis-scanned';
 
     // Processes a single tweet element on Twitter/X
-    async function scanTweetElement(tweetEl) {
+    function scanTweetElement(tweetEl) {
         if (tweetEl.getAttribute(PROCESSED_ATTR)) return;
         tweetEl.setAttribute(PROCESSED_ATTR, 'true');
 
         // Extract Text
-        const textEl = tweetEl.querySelector('[data-testid="tweetText"]');
+        let textEl = tweetEl.querySelector('[data-testid="tweetText"]');
+        if (!textEl) {
+            textEl = tweetEl.querySelector('div[dir="auto"][lang]');
+        }
         if (!textEl) return;
+
         const text = textEl.innerText.trim();
         if (!text || text.length < 5) return;
 
@@ -20,41 +23,43 @@
         const userHeader = tweetEl.querySelector('[data-testid="User-Name"]');
         let username = 'anon_user';
         if (userHeader) {
-            const handleMatch = userHeader.innerText.match(/@(\w+)/);
+            const handleMatch = userHeader.innerText.match(/@([a-zA-Z0-9_]+)/);
             if (handleMatch) username = handleMatch[1];
         }
 
-        // Check if avatar is default
+        // Avatar check
         const avatarImg = tweetEl.querySelector('img[src*="profile_images"]');
         const defaultAvatar = !avatarImg || avatarImg.src.includes('default_profile');
 
-        try {
-            const response = await fetch(BACKEND_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: text,
-                    username: username,
-                    accountAgeDays: 30, // Estimator baseline
-                    followerCount: 150,
-                    followingCount: 300,
-                    defaultAvatar: defaultAvatar
-                })
-            });
+        const payload = {
+            text: text,
+            username: username,
+            accountAgeDays: 30,
+            followerCount: 150,
+            followingCount: 300,
+            defaultAvatar: defaultAvatar
+        };
 
-            if (response.ok) {
-                const analysis = await response.json();
-                injectBadge(tweetEl, analysis);
-            }
-        } catch (e) {
-            // Server might be paused
+        // Send via background service worker to bypass mixed content
+        try {
+            chrome.runtime.sendMessage({ action: 'analyzePost', payload: payload }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.debug('[AegisGuard] Mesajlaşma uyarısı:', chrome.runtime.lastError.message);
+                    return;
+                }
+                if (response && response.success && response.data) {
+                    console.log(`[AegisGuard] Tweet Analiz Edildi: @${username} -> Tehdit: ${response.data.threatLevel} (%${Math.round(response.data.overallManipulationScore || 0)})`);
+                    injectBadge(tweetEl, textEl, userHeader, response.data);
+                }
+            });
+        } catch (err) {
+            console.debug('[AegisGuard] Extension bağlamı hatası:', err);
         }
     }
 
     // Injects a visual security badge into the tweet
-    function injectBadge(tweetEl, analysis) {
-        const header = tweetEl.querySelector('[data-testid="User-Name"]') || tweetEl;
-        if (!header) return;
+    function injectBadge(tweetEl, textEl, userHeader, analysis) {
+        if (tweetEl.querySelector('.aegis-badge')) return;
 
         const badge = document.createElement('div');
         const score = Math.round(analysis.overallManipulationScore || 0);
@@ -62,9 +67,9 @@
 
         badge.className = `aegis-badge aegis-${level}`;
 
-        let label = `🛡️ AegisGuard: Güvenli (%${score})`;
-        if (level === 'medium') label = `⚠️ AegisGuard: Şüpheli (%${score})`;
-        else if (level === 'high') label = `🚨 AegisGuard: Yüksek Risk (%${score})`;
+        let label = `🛡️ AegisGuard: GÜVENLİ (%${score})`;
+        if (level === 'medium') label = `⚠️ AegisGuard: ŞÜPHELİ (%${score})`;
+        else if (level === 'high') label = `🚨 AegisGuard: YÜKSEK RİSK (%${score})`;
         else if (level === 'critical') label = `⛔ AegisGuard: KRİTİK MANİPÜLASYON (%${score})`;
 
         badge.innerHTML = `
@@ -77,10 +82,16 @@
             ` : ''}
         `;
 
-        header.parentNode.insertBefore(badge, header.nextSibling);
+        // Insert right above tweet text or below user header
+        if (userHeader && userHeader.parentNode) {
+            userHeader.parentNode.insertBefore(badge, userHeader.nextSibling);
+        } else if (textEl && textEl.parentNode) {
+            textEl.parentNode.insertBefore(badge, textEl);
+        }
     }
 
     function escapeHtml(str) {
+        if (!str) return '';
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
@@ -88,31 +99,21 @@
 
     // Scan all currently visible tweets
     function scanAllVisible() {
-        // Twitter/X tweets
         const tweets = document.querySelectorAll('article[data-testid="tweet"]');
         tweets.forEach(scanTweetElement);
-
-        // Instagram comments or posts
-        const instaPosts = document.querySelectorAll('article, div[role="dialog"] ul li');
-        instaPosts.forEach(postEl => {
-            if (postEl.getAttribute(PROCESSED_ATTR)) return;
-            postEl.setAttribute(PROCESSED_ATTR, 'true');
-            const textEl = postEl.querySelector('h1, span, p');
-            if (textEl && textEl.innerText.length > 15) {
-                // Can scan Instagram similarly
-            }
-        });
     }
 
     // Observe dynamic infinite-scroll feed
     let debounceTimer;
     const observer = new MutationObserver(() => {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(scanAllVisible, 400);
+        debounceTimer = setTimeout(scanAllVisible, 300);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Initial scan
-    setTimeout(scanAllVisible, 1200);
+    // Initial scan and retries for dynamic page loading
+    scanAllVisible();
+    setTimeout(scanAllVisible, 1000);
+    setTimeout(scanAllVisible, 2500);
 })();
