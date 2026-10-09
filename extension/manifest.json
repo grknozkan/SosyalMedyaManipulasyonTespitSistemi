@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "AegisGuard - Sosyal Medya Manipülasyon Dedektörü",
+  "version": "1.0.0",
+  "description": "Twitter/X ve Instagram akışındaki botnet, copypasta ve yapay manipülasyonları gerçek zamanlı yakalar.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8080/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://*.instagram.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AegisGuard Durumu"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://*.instagram.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

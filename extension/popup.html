@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>AegisGuard</title>
+    <style>
+        body {
+            width: 300px;
+            margin: 0;
+            padding: 16px;
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        .brand {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #38bdf8;
+        }
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            margin-bottom: 12px;
+        }
+        .status-pill.offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .stats-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        .stat-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            display: block;
+        }
+        .stat-lbl {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .btn-link {
+            display: block;
+            text-align: center;
+            padding: 8px;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            transition: opacity 0.2s;
+        }
+        .btn-link:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">🛡️ AegisGuard</div>
+        <span style="font-size: 10px; color: #64748b;">v1.0</span>
+    </div>
+
+    <div class="status-pill" id="serverStatus">
+        <span id="statusDot">●</span>
+        <span id="statusText">Java Sunucusu Kontrol Ediliyor...</span>
+    </div>
+
+    <div class="stats-box">
+        <div class="stat-card">
+            <span class="stat-val" id="inspectedCount">0</span>
+            <span class="stat-lbl">Taranan Gönderi</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-val" id="botCount" style="color: #f87171;">0</span>
+            <span class="stat-lbl">Yakalanan Bot</span>
+        </div>
+    </div>
+
+    <a href="http://localhost:8080" target="_blank" class="btn-link">📊 AegisGuard Panelini Aç</a>
+
+    <script src="popup.js"></script>
+</body>
+</html>

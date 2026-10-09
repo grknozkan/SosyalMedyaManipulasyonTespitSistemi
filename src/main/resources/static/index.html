@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGuard | Sosyal Medya Manipülasyon & Botnet Tespit Sistemi</title>
+    <meta name="description" content="Java 21 ve Spring Boot tabanlı gerçek zamanlı sosyal medya manipülasyonu, koordineli botnet ve astroturfing tespit sistemi">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="background-glow glow-1"></div>
+    <div class="background-glow glow-2"></div>
+
+    <header class="navbar">
+        <div class="brand">
+            <div class="logo-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="logo-title">AegisGuard <span class="badge-pulse">v1.0 • Java 21</span></h1>
+                <p class="logo-subtitle">Sosyal Medya Manipülasyon & CIB Tespit Radarı</p>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <div class="stream-status" id="streamStatusIndicator">
+                <span class="status-dot"></span>
+                <span id="streamStatusText">Canlı Radar Dinleniyor</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnToggleAutoStream">
+                <span class="icon">▶</span> <span id="autoStreamBtnLabel">Otomatik Akışı Başlat</span>
+            </button>
+            <button class="btn btn-danger btn-sm" id="btnClearData" title="Tüm verileri ve geçmişi sıfırla">
+                <span class="icon">🗑</span> Sıfırla
+            </button>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- Top Metrics Row -->
+        <section class="metrics-grid">
+            <div class="card metric-card threat-gauge-card">
+                <div class="card-header-compact">
+                    <span class="card-eyebrow">TEHDİT İNDEKSİ</span>
+                    <span class="threat-status-tag" id="threatStatusTag">GÜVENLİ</span>
+                </div>
+                <div class="gauge-wrapper">
+                    <svg class="gauge-svg" viewBox="0 0 160 160">
+                        <circle class="gauge-bg" cx="80" cy="80" r="68"></circle>
+                        <circle class="gauge-meter" id="threatGaugeCircle" cx="80" cy="80" r="68"></circle>
+                    </svg>
+                    <div class="gauge-label">
+                        <span class="gauge-val" id="threatIndexVal">0</span>
+                        <span class="gauge-unit">/100</span>
+                    </div>
+                </div>
+                <div class="gauge-caption">Ağ Genelinde Ortalama Manipülasyon Skoru</div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="metric-icon-wrap icon-blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                </div>
+                <span class="card-eyebrow">TARANAN GÖNDERİ</span>
+                <div class="metric-number" id="totalPostsVal">0</div>
+                <div class="metric-footnote">
+                    <span class="highlight-warn" id="flaggedCountVal">0</span> şüpheli tespit edildi
+                </div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="metric-icon-wrap icon-purple">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                </div>
+                <span class="card-eyebrow">CIB KÜMELERİ</span>
+                <div class="metric-number" id="activeClustersVal">0</div>
+                <div class="metric-footnote">Koordineli Gerçek Dışı Kampanya</div>
+            </div>
+
+            <div class="card metric-card">
+                <div class="metric-icon-wrap icon-red">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <span class="card-eyebrow">BOTNET HESAPLARI</span>
+                <div class="metric-number" id="botAccountsVal">0</div>
+                <div class="metric-footnote">
+                    Oran: <span class="highlight-red" id="manipulationRatioVal">%0.0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Threat Simulator Action Bar -->
+        <section class="card action-bar-card">
+            <div class="action-bar-header">
+                <div class="action-title-group">
+                    <span class="pulse-indicator"></span>
+                    <h2 class="section-title">Gerçek Zamanlı Manipülasyon & Saldırı Simülatörü</h2>
+                </div>
+                <span class="action-desc">Sistemin koordineli bot ağlarını nasıl yakaladığını test etmek için senaryo tetikleyin:</span>
+            </div>
+
+            <div class="action-buttons-grid">
+                <button class="action-btn crypto-btn" id="btnAttackCrypto">
+                    <div class="btn-glow"></div>
+                    <span class="btn-emoji">🚀</span>
+                    <div class="btn-content">
+                        <strong>Kripto Pump Botneti</strong>
+                        <small>10 Bot • Eşzamanlı $SOLAR Spamı</small>
+                    </div>
+                </button>
+
+                <button class="action-btn boycott-btn" id="btnAttackBoycott">
+                    <div class="btn-glow"></div>
+                    <span class="btn-emoji">📢</span>
+                    <div class="btn-content">
+                        <strong>Astroturfing Boykotu</strong>
+                        <small>12 Bot • Yapay #MarketlerBoykot</small>
+                    </div>
+                </button>
+
+                <button class="action-btn disinfo-btn" id="btnAttackDisinfo">
+                    <div class="btn-glow"></div>
+                    <span class="btn-emoji">⚠️</span>
+                    <div class="btn-content">
+                        <strong>Dezenformasyon Salgını</strong>
+                        <small>8 Bot • Asılsız Şebeke Suyu İddiası</small>
+                    </div>
+                </button>
+
+                <button class="action-btn organic-btn" id="btnSingleOrganic">
+                    <div class="btn-glow"></div>
+                    <span class="btn-emoji">🌱</span>
+                    <div class="btn-content">
+                        <strong>Doğal Organik Paylaşım</strong>
+                        <small>+1 Doğal Kullanıcı Gönderisi</small>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Content Area: Feed vs Inspector & Clusters -->
+        <div class="main-columns-grid">
+            <!-- Left Column: Live Feed -->
+            <section class="feed-column">
+                <div class="card feed-card">
+                    <div class="feed-header">
+                        <div class="feed-title-wrap">
+                            <h2 class="section-title">Canlı Ağ Akışı (Canlı İnceleme)</h2>
+                            <span class="feed-badge" id="feedCounterBadge">0 Gönderi</span>
+                        </div>
+                        <div class="feed-filters">
+                            <button class="filter-tab active" data-filter="all">Tümü</button>
+                            <button class="filter-tab" data-filter="flagged">Şüpheliler</button>
+                            <button class="filter-tab" data-filter="high">Kritik Tehdit</button>
+                        </div>
+                    </div>
+
+                    <div class="feed-list" id="feedListContainer">
+                        <div class="feed-empty-state" id="emptyStatePlaceholder">
+                            <div class="empty-icon">📡</div>
+                            <p>Henüz gönderi taranmadı.</p>
+                            <p class="empty-sub">Yukarıdaki simülatör butonlarına tıklayarak organik akış veya bot saldırısı başlatabilirsiniz.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Inspector & Coordinated Clusters -->
+            <section class="sidebar-column">
+                <!-- Inspector Card -->
+                <div class="card inspector-card">
+                    <div class="card-header-styled">
+                        <div class="header-icon-box">🔍</div>
+                        <div>
+                            <h2 class="section-title">Anlık Gönderi Müfettişi</h2>
+                            <p class="card-desc">İstediğin metni ve hesap profilini yazarak sistemi test et</p>
+                        </div>
+                    </div>
+
+                    <form id="inspectorForm" class="inspector-form">
+                        <div class="form-group">
+                            <label for="inspectText">Paylaşım Metni:</label>
+                            <textarea id="inspectText" rows="3" placeholder="Örn: Son dakika! $SOLAR coin Binance listeleniyor kaçırmayın! #CryptoPump" required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inspectUsername">Kullanıcı Adı:</label>
+                                <input type="text" id="inspectUsername" value="crypto_bot8921" placeholder="örn: ahmet_dev">
+                            </div>
+                            <div class="form-group">
+                                <label for="inspectAge">Hesap Yaşı (Gün):</label>
+                                <input type="number" id="inspectAge" value="2" min="1" max="5000">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="inspectFollowers">Takipçi:</label>
+                                <input type="number" id="inspectFollowers" value="3" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="inspectFollowing">Takip Edilen:</label>
+                                <input type="number" id="inspectFollowing" value="750" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="inspectDefaultAvatar" checked>
+                            <label for="inspectDefaultAvatar">Varsayılan Profil Fotoğrafı (Avatar Yok)</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="btnAnalyzePost">
+                            <span class="icon">⚡</span> Manipülasyon Analizi Yap
+                        </button>
+                    </form>
+
+                    <!-- Inspector Result Box -->
+                    <div class="inspector-result-box" id="inspectorResultBox" style="display: none;">
+                        <div class="result-header">
+                            <span class="result-label">Analiz Sonucu:</span>
+                            <span class="threat-badge" id="inspectThreatBadge">KRİTİK</span>
+                        </div>
+                        <div class="result-score-bar">
+                            <div class="score-bar-fill" id="inspectScoreBarFill" style="width: 0%"></div>
+                        </div>
+                        <div class="score-details">
+                            <span>Manipülasyon Skoru: <strong id="inspectScoreVal">0/100</strong></span>
+                            <span>Maks Benzerlik: <strong id="inspectSimVal">%0</strong></span>
+                        </div>
+                        <div class="result-reasons-title">Tespit Edilen Bayraklar:</div>
+                        <ul class="result-reasons-list" id="inspectReasonsList"></ul>
+                    </div>
+                </div>
+
+                <!-- Coordinated Clusters (CIB Radar) -->
+                <div class="card clusters-card">
+                    <div class="card-header-styled">
+                        <div class="header-icon-box purple-box">🕸️</div>
+                        <div>
+                            <h2 class="section-title">Koordineli Kampanyalar (CIB Radar)</h2>
+                            <p class="card-desc">Organize botnet ve astroturfing hücreleri</p>
+                        </div>
+                    </div>
+
+                    <div class="clusters-list" id="clustersListContainer">
+                        <div class="empty-clusters-text">Aktif koordineli botnet kümesi yok.</div>
+                    </div>
+                </div>
+
+                <!-- Flagged Bot Accounts -->
+                <div class="card bots-card">
+                    <div class="card-header-styled">
+                        <div class="header-icon-box red-box">🤖</div>
+                        <div>
+                            <h2 class="section-title">Bayraklanan Bot Hesaplar</h2>
+                            <p class="card-desc">Yüksek riskli sahte kullanıcı profilleri</p>
+                        </div>
+                    </div>
+
+                    <div class="bots-list" id="botsListContainer">
+                        <div class="empty-clusters-text">Bayraklanan bot hesabı bulunmuyor.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>AegisGuard Social Manipulation & Astroturfing Detection System • Java 21 • Spring Boot 3.3.4 • MinHash / Jaccard / Levenshtein / Burst Detection</p>
+    </footer>
+
+    <script src="/app.js"></script>
+</body>
+</html>
