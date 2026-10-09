@@ -1,6 +1,6 @@
 # AegisGuard - Sosyal Medya Manipülasyon, Astroturfing ve Botnet Tespit Sistemi
 
-Modern sosyal medya ağlarında **Koordineli Gerçek Dışı Davranış (CIB - Coordinated Inauthentic Behavior)**, organize astroturfing kampanyaları ve otomatik bot ordularını tespit etmek için geliştirilmiş **Java 21** ve **Spring Boot 3.3.4** tabanlı gerçek zamanlı savunma ve analiz motoru.
+Modern sosyal medya ağlarında **Koordineli Gerçek Dışı Davranış (CIB - Coordinated Inauthentic Behavior)**, organize astroturfing kampanyaları ve otomatik bot ordularını tespit etmek için geliştirilmiş **Java 21**, **Spring Boot 3.3.4** ve **Chrome Extension (Manifest V3)** tabanlı gerçek zamanlı savunma ve analiz motoru.
 
 ---
 
@@ -30,26 +30,54 @@ Modern sosyal medya ağlarında **Koordineli Gerçek Dışı Davranış (CIB - C
 
 ---
 
-## 🚀 Sistemi Çalıştırma
+## 🧩 Chrome Eklentisi Kurulumu (Twitter/X & Instagram Canlı Koruma)
 
-Sunucu şu anda `http://localhost:8080` adresinde arka planda çalışmaktadır.
+Proje içerisinde yer alan `extension/` klasörü, sıfır maliyetle ve hiçbir API anahtarı gerektirmeden gerçek Twitter/X ve Instagram akışındaki gönderileri anında denetlemenizi sağlar.
 
-Projeyi sıfırdan terminalden başlatmak isterseniz:
-```powershell
-cd "C:\Users\Gürkan\.gemini\antigravity-ide\scratch\social-manipulation-detector"
-.\mvnw.cmd spring-boot:run
-```
-veya derlenmiş JAR ile:
-```powershell
-java -jar target\social-manipulation-detector-0.0.1-SNAPSHOT.jar
-```
-
-Arayüze erişim:
-Tarayıcınızda açın: **[http://localhost:8080](http://localhost:8080)**
+1. **Google Chrome, Brave veya Microsoft Edge** tarayıcınızı açın.
+2. Adres çubuğuna gidin:
+   ```
+   chrome://extensions
+   ```
+3. Sağ üst köşedeki **Geliştirici modu (Developer Mode)** anahtarını aktif edin.
+4. Sol üstteki **Paketlenmemiş öğe yükle (Load unpacked)** butonuna tıklayın.
+5. Proje dizinindeki `extension` klasörünü seçin:
+   ```
+   .../social-manipulation-detector/extension
+   ```
+6. **x.com (Twitter)** veya **instagram.com** sayfasını açıp yenileyin (F5).
+7. Tweet'lerin ve gönderilerin hemen altında canlı **AegisGuard Güvenlik Rozetleri** belirecektir:
+   - `[🛡️ AegisGuard: GÜVENLİ]`
+   - `[🚨 AegisGuard: KRİTİK MANİPÜLASYON (%88) - Bot Şüphesi / Copypasta]`
 
 ---
 
-## 📡 REST API & SSE Akışı
+## 🚀 Java Backend Sunucusunu Çalıştırma
+
+Sunucuyu terminalden başlatmak için:
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+veya paketlenmiş JAR dosyasıyla:
+```powershell
+java -jar target/social-manipulation-detector-0.0.1-SNAPSHOT.jar
+```
+
+AegisGuard Canlı Kontrol Paneline erişim:
+👉 **[http://localhost:8080](http://localhost:8080)**
+
+---
+
+## 🐍 Terminal Toplayıcısı (`collector.py`)
+
+Harici bir web tarayıcısı açmadan, konsol üzerinden kopyalanan herhangi bir gönderiyi test etmek için:
+```bash
+python collector.py
+```
+
+---
+
+## 📡 REST API & SSE Akış Dokümantasyonu
 
 | Metot | Uç Nokta | Açıklama |
 |---|---|---|
@@ -58,10 +86,11 @@ Tarayıcınızda açın: **[http://localhost:8080](http://localhost:8080)**
 | `GET` | `/api/clusters` | Tespit edilen koordineli CIB kampanya kümeleri |
 | `GET` | `/api/accounts/flagged` | Yüksek riskli bot profilleri |
 | `POST` | `/api/analyze` | Anlık gönderi analiz testi (Kullanıcı girdisi) |
-| `POST` | `/api/simulation/attack?scenario=CRYPTO_PUMP` | Kripto pump botnet saldırısı tetikler |
-| `POST` | `/api/simulation/attack?scenario=ASTROTURFING_BOYCOTT` | Sahte boykot astroturfing saldırısı tetikler |
+| `POST` | `/api/post` | Dış sistemlerden (Eklenti / Scraper) gönderi kabulü |
+| `POST` | `/api/simulation/attack?scenario=CRYPTO_PUMP` | Kripto pump botnet saldırısı simülasyonu |
+| `POST` | `/api/simulation/attack?scenario=ASTROTURFING_BOYCOTT` | Sahte boykot astroturfing saldırısı simülasyonu |
 | `POST` | `/api/simulation/attack?scenario=DISINFO_VIRAL` | Dezenformasyon söylentisi simülasyonu |
-| `POST` | `/api/simulation/single-organic` | 1 adet doğal organik paylaşım üretir |
+| `POST` | `/api/simulation/single-organic` | 1 adet doğal organik kullanıcı gönderisi üretir |
 | `POST` | `/api/simulation/start?interval=1500` | Sürekli otomatik veri akışını başlatır |
 | `POST` | `/api/simulation/stop` | Otomatik akışı durdurur |
 | `POST` | `/api/clear` | Tüm geçmişi ve sayaçları sıfırlar |
